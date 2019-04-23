@@ -10,11 +10,21 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
-import os
+import os,sys
+'''
+['/home/python/Desktop/meiduo_25/meiduo_mall', '/home/python/Desktop/meiduo_25/meiduo_mall', '/home/python/.virtualenvs/django/lib/python36.zip', '/home/python/.virtualenvs/django/lib/python3.6', '/home/python/.virtualenvs/django/lib/python3.6/lib-dynload', '/usr/lib/python3.6', '/home/python/.virtualenvs/django/lib/python3.6/site-packages', '/snap/pycharm-professional/121/helpers/pycharm_matplotlib_backend']
+'''
+# 查看项目导包路径
+print(sys.path)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+print(BASE_DIR)
 
+# 追加导包路径
+sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
+# 查看新的项目导包路径
+print(sys.path)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -37,6 +47,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # 'meiduo_mall.apps.users',
+    'users',   # 用户模块应用
 ]
 
 MIDDLEWARE = [
@@ -187,3 +199,7 @@ LOGGING = {
         },
     }
 }
+
+
+# 指定django认证用户模型类：应用名.模型名
+AUTH_USER_MODEL = 'users.User'
