@@ -24,3 +24,14 @@ class ImageCodeView(View):
 
         # 把生成好的图片响应给前端
         return http.HttpResponse(image, content_type='image/png')
+
+
+class SMSCodeView(View):
+    """短信验证码"""
+
+    def get(self, request, mobile):
+        """
+
+        :param mobile: 要接收短信验证码的手机号
+        """
+        pass
