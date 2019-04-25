@@ -5,6 +5,7 @@ import re
 from django.contrib.auth import login
 from django.db import DatabaseError
 from .models import User
+from django_redis import get_redis_connection
 
 import logging
 from meiduo_mall.utils.response_code import RETCODE
@@ -53,7 +54,13 @@ class RegisterView(View):
         if not re.match(r'^1[3456789]\d{9}$', mobile):
             return http.HttpResponseForbidden("请输入正确的手机号码")
 
-        # TODO 短信验证码校验后期再补充
+        # 短信验证码校验后期再补充
+        redis_conn = get_redis_connection('verify_code')
+        sms_code_server = redis_conn.get('sms_%s' % mobile) # 获取redis中的短信验证码
+
+        if sms_code_server is None or sms_code != sms_code_server.decode():
+            return http.HttpResponseForbidden('短信验证码有误')
+
 
         # 创建一个user
         try:
