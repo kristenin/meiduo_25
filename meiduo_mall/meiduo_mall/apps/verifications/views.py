@@ -78,11 +78,18 @@ class SMSCodeView(View):
         sms_code = "%06d" % randint(0, 999999)
         logger.info(sms_code)
 
+        # 创建redis管道对象
+        pl = redis_conn.pipeline()
+
         # 将生成好的短信验证码也存储到redis，以备后期校验
-        redis_conn.setex('sms_%s' % mobile, constants.SMS_CODE_REDIS_EXPIRES, sms_code)
+        # redis_conn.setex('sms_%s' % mobile, constants.SMS_CODE_REDIS_EXPIRES, sms_code)
+        pl.setex('sms_%s' % mobile, constants.SMS_CODE_REDIS_EXPIRES, sms_code)
 
         # 手机号发过短信后在redis中存储一个标记
-        redis_conn.setex('send_flag_%s' % mobile, 60, 1)
+        # redis_conn.setex('send_flag_%s' % mobile, 60, 1)
+        pl.setex('send_flag_%s' % mobile, 60, 1)
+        # 执行管道
+        pl.execute()
 
         # 利用容联云SDK发短信
         # CCP().send_template_sms(手机号,[验证码, 提示用户验证码有效期多少分钟],短信模板)
