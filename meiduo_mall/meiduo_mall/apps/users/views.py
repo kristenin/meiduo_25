@@ -124,6 +124,11 @@ class LoginView(View):
         if all([username,password]) is False:
             return http.HttpResponseForbidden('缺少必传参数')
 
+        # 校验（多账号的另类实现，前提要把配置文件dev.py中的指定自定义的用户认证后端注释掉）
+        # if re.match(r'^1[3-9]\d{9}$', username):
+        #     # User.USERNAME_FIELD = 'mobile'
+        #     User.USERNAME_FIELD ='email'
+
         # 认证登陆用户
         user = authenticate(username=username, password=password)
         if user is None:
@@ -147,4 +152,4 @@ class LoginView(View):
 
         # 响应登陆结果
         # return redirect(reversed('contents:index'))
-        return redirect('/')
+        return redirect('/       ')
