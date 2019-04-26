@@ -76,8 +76,14 @@ class RegisterView(View):
         # 状态保持
         login(request, user)    # 存储用户的id到session中记录它的登陆状态
 
-        # 注册成功重定向到首页
-        return redirect('/')
+        response = redirect("/")  # 创建好响应对象
+        response.set_cookie('username', user.username, max_age=settings.SESSION_COOKIE_AGE)
+
+        # 响应登陆结果
+        # return redirect(reversed('contents:index'))
+        return response
+        # # 注册成功重定向到首页
+        # return redirect('/')
 
 class UsernameCountView(View):
     """判断用户名是否已注册"""
@@ -149,7 +155,10 @@ class LoginView(View):
         login(request,user)
 
 
+        response = redirect("/")     # 创建好响应对象
+        response.set_cookie('username', user.username, max_age=settings.SESSION_COOKIE_AGE)
+
 
         # 响应登陆结果
         # return redirect(reversed('contents:index'))
-        return redirect('/       ')
+        return response
