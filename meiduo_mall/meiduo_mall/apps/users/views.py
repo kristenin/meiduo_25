@@ -155,7 +155,10 @@ class LoginView(View):
         # login(request,user)
 
         # 响应登陆结果
-        response = redirect("/")     # 创建好响应对象
+        # # 第一种方法
+        # response = redirect("/")     # 创建好响应对象
+        # 第二种方法
+        response = redirect(request.GET.get('next','/'))     # 创建好响应对象
         response.set_cookie('username', user.username, max_age=3600 * 24 * 14)
 
         # return redirect(reversed('contents:index'))
@@ -169,8 +172,26 @@ class LogoutView(View):
         # 清理session中的状态保持数据
         logout(request)
         # 退出登陆，重定向到登陆页
-        response = redirect("/login/")
+        # response = redirect("/login/")
+        response = redirect(reverse('users:login'))
         # 退出登陆时清除cookie中的username
         response.delete_cookie('username')
 
         return  response
+
+class UserInfoView(View):
+    """用户中心"""
+    def get(self, request):
+        """提供个人信息界面"""
+        # 判断当前用户是否登陆，如果登陆返回用户中心界面
+        # 如果用户没有登陆，就重定义到登陆
+        user = request.user # 通过请求对象获取user
+        if user.is_authenticated():
+            return  render(request,'user_center_info.html')
+        else:
+            # return redirect(reverse('users:login'))
+
+            # 使用next参数,next参数的作用：
+            # 由Django用户认证系统提供，搭配login_required装饰器使用。
+            # 记录了用户未登录时访问的地址信息，可以帮助我们实现在用户登录成功后直接进入未登录时访问的地址。
+            return redirect(reverse('/login/?next=/info/'))
