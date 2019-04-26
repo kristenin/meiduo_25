@@ -12,4 +12,6 @@ urlpatterns = [
 
     # 用户登陆
     url(r'^login/',views.LoginView.as_view(), name='login'),
+    # 退出登陆
+    url(r'^logout/',views.LogoutView.as_view(), name='logout'),
 ]

@@ -1,8 +1,8 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect,reverse
 from django.views import View
 from django import http
 import re
-from django.contrib.auth import login,authenticate
+from django.contrib.auth import login,authenticate,logout
 from django.db import DatabaseError
 from .models import User
 from django_redis import get_redis_connection
@@ -76,10 +76,10 @@ class RegisterView(View):
         # 状态保持
         login(request, user)    # 存储用户的id到session中记录它的登陆状态
 
+        # 响应注册结果
         response = redirect("/")  # 创建好响应对象
-        response.set_cookie('username', user.username, max_age=settings.SESSION_COOKIE_AGE)
+        response.set_cookie('username', user.username, max_age=3600 * 24 * 14)
 
-        # 响应登陆结果
         # return redirect(reversed('contents:index'))
         return response
         # # 注册成功重定向到首页
@@ -140,25 +140,37 @@ class LoginView(View):
         if user is None:
             return render(request, 'login.html', {'account_errmsg':'用户名或密码错误'})
 
-        # # 第一种方法：先保持再设置
-        # # 实现状态保持
-        # login(request, user)
-        # # 设置状态保持的周期
-        # if remembered != 'on':
-        #     # 没有记住用户：浏览器会话结束就过期，默认是两周
-        #     request.session.set_expiry(0)
-
-        # 第二种方法：先设置再保持
-        if remembered != 'on':  # 没有勾选记住登陆
-            settings.SESSION_COOKIE_AGE = 0 # 修改Django的SESSION缓存时长
-        # 状态保持
-        login(request,user)
-
-
-        response = redirect("/")     # 创建好响应对象
-        response.set_cookie('username', user.username, max_age=settings.SESSION_COOKIE_AGE)
-
+        # 第一种方法：先保持再设置
+        # 实现状态保持
+        login(request, user)
+        # 设置状态保持的周期
+        if remembered != 'on':
+            # 没有记住用户：浏览器会话结束就过期，默认是两周
+            request.session.set_expiry(0)
+        #
+        # # 第二种方法：先设置再保持
+        # if remembered != 'on':  # 没有勾选记住登陆
+        #     settings.SESSION_COOKIE_AGE = 0 # 修改Django的SESSION缓存时长
+        # # 状态保持
+        # login(request,user)
 
         # 响应登陆结果
+        response = redirect("/")     # 创建好响应对象
+        response.set_cookie('username', user.username, max_age=3600 * 24 * 14)
+
         # return redirect(reversed('contents:index'))
         return response
+
+
+class LogoutView(View):
+    """退出登陆"""
+    def get(self, request):
+        """实现退出登陆逻辑"""
+        # 清理session中的状态保持数据
+        logout(request)
+        # 退出登陆，重定向到登陆页
+        response = redirect("/login/")
+        # 退出登陆时清除cookie中的username
+        response.delete_cookie('username')
+
+        return  response
