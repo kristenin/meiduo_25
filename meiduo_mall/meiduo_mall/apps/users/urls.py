@@ -1,5 +1,7 @@
 from django.conf.urls import url
 from django.contrib import admin
+from django.contrib.auth.decorators import login_required
+
 from . import views
 
 urlpatterns = [
@@ -16,5 +18,5 @@ urlpatterns = [
     url(r'^logout/',views.LogoutView.as_view(), name='logout'),
 
     # 用户中心
-    url(r'^info/$', views.UserInfoView.as_view(), name='info')
+    url(r'^info/$', login_required(views.UserInfoView.as_view()), name='info')
 ]
