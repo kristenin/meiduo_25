@@ -18,6 +18,7 @@ class RETCODE:
     OPENIDERR           = "5005"
     PARAMERR            = "5006"
     STOCKERR            = "5007"
+    SERVERERR           = "5008"
 
 err_msg = {
     RETCODE.OK                 : u"成功",
