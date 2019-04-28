@@ -22,7 +22,7 @@ urlpatterns = [
 
     url(r'^', include('contents.urls', namespace='contents')),  # 首页模块
 
-    url(r'^', include('verifications.urls', namespace='verifications')),  # 图片验证模块
+    url(r'^', include('verifications.urls', namespace='verifications')),  # 验证模块
 
     url(r'^', include('oauth.urls', namespace='oauth')),    # QQ模块
 ]

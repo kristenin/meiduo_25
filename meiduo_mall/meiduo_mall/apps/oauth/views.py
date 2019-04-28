@@ -1,56 +1,78 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views import View
 from django import http
 from QQLoginTool.QQtool import OAuthQQ
 from django.conf import settings
+from django.contrib.auth import login
+
 from meiduo_mall.utils.response_code import RETCODE
 import logging
+from .models import OAuthQQUser
+logger = logging.getLogger('django')
+
+
 # Create your views here.
+class OAuthURLView(View):
+    """提供QQ登录界面链接"""
 
-class QQAuthURLView(View):
-    """提供QQ登录页面网址
-    https://graph.qq.com/oauth2.0/authorize?response_type=code&client_id=xxx&redirect_uri=xxx&state=xxx
-    """
     def get(self, request):
-        # next表示从哪个页面进入到的登录页面，将来登录成功后，就自动回到那个页面
+        # 提取前端用查询参数传入的next参数:记录用户从哪里去到login界面
         next = request.GET.get('next', '/')
-
-        # 获取QQ登录页面网址
-        # oauth = OAuthQQ(client_id='appid', client_secret='appkey', redirect_url='授权成功回调url', state='记录来源')
+        # QQ_CLIENT_ID = '101518219'
+        # QQ_CLIENT_SECRET = '418d84ebdc7241efb79536886ae95224'
+        # QQ_REDIRECT_URI = 'http://www.meiduo.site:8000/oauth_callback'
+        # oauth = OAuthQQ(client_id='appid', client_secret='appkey', redirect_uri='授权成功回调url', state='记录来源')
         oauth = OAuthQQ(client_id=settings.QQ_CLIENT_ID,
                         client_secret=settings.QQ_CLIENT_SECRET,
                         redirect_uri=settings.QQ_REDIRECT_URI,
                         state=next)
-        # 拼接QQ登录链接
+        # 拼接QQ登录连接
+        # https://graph.qq.com/oauth2.0/authorize?response_type=code&client_id=123&redirect_uri=xxx&state=next
         login_url = oauth.get_qq_url()
 
-        return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK', 'login_url':login_url})
+        return http.JsonResponse({'login_url': login_url, 'code': RETCODE.OK, 'errmsg': 'OK'})
 
-class QQAuthUserView(View):
-    """用户扫玛登录的回调处理"""
+
+class OAuthUserView(View):
+    """QQ登录后回调处理"""
 
     def get(self, request):
-        """Oauth2.0认证"""
-        # 接收Authorization Code
-        code = request.GET.get('code')
-        if not code:
-            return http.HttpResponseForbidden('缺少code')
 
-        # 创建工具对象
+        # 获取查询字符串中的code
+        code = request.GET.get('code')
+        state = request.GET.get('state', '/')
+
+
+        # 创建QQ登录SDK对象
         oauth = OAuthQQ(client_id=settings.QQ_CLIENT_ID,
                         client_secret=settings.QQ_CLIENT_SECRET,
-                        redirect_uri=settings.QQ_REDIRECT_URI)
+                        redirect_uri=settings.QQ_REDIRECT_URI,
+                        )
 
         try:
-            # 使用code向QQ服务器请求access_token
+            # 调用SDK中的get_access_token(code) 得到access_token
             access_token = oauth.get_access_token(code)
-
-            # 使用access_token向QQ服务器请求openid
+            # 调用SDK中的get_openid(access_token) 得到openid
             openid = oauth.get_open_id(access_token)
         except Exception as e:
-            logger = logging.getLogger('django')
             logger.error(e)
-            return http.JsonResponse({'code': RETCODE.SERVERERR, 'errmsg':'QQ服务器不可用'})
+            return http.JsonResponse({'code': RETCODE.SERVERERR, 'errmsg': 'QQ服务器不可用'})
+
+        # 在OAuthQQUser表中查询openid
+        try:
+            oauth_model = OAuthQQUser.objects.get(openid=openid)
+        except OAuthQQUser.DoesNotExist:
+            # 如果在OAuthQQUser表中没有查询到openid, 没绑定说明第一个QQ登录
+            # 创建一个新的美多用户和QQ的openid绑定
+            return render(request, 'oauth_callback.html')
+        else:
+            # 如果在OAuthQQUser表中查询到openid,说明是已绑定过美多用户的QQ号
+            user = oauth_model.user
+            login(request, user)
+            # 直接登录成功:  状态操持,
+            response = redirect(state)
+            response.set_cookie('username', user.username, max_age=settings.SESSSION_COOKIE_AGE)
+            return response
 
 
-        return http.HttpResponseServerError({'openid':openid})
+        # return http.JsonResponse({'openid': openid})

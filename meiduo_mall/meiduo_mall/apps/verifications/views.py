@@ -94,6 +94,6 @@ class SMSCodeView(View):
         # 利用容联云SDK发短信
         # CCP().send_template_sms(手机号,[验证码, 提示用户验证码有效期多少分钟],短信模板)
         CCP().send_template_sms(mobile,[sms_code, constants.SMS_CODE_REDIS_EXPIRES//60],constants.SEND_SMS_TEMPLATE_ID)
-
+        # 需要把CCP这行代码先加入到一个指定的仓库中，后续在单独的一个线程、进程去异步执行，不再当下执行
         # 响应
         return http.JsonResponse({"code":RETCODE.OK, 'errmsg':'发送短信验证'})
