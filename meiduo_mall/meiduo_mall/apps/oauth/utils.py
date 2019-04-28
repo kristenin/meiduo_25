@@ -1,18 +1,16 @@
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer,BadData
 from django.conf import settings
 
-def generate_eccess_token(openid):
+def generate_openid_signature(openid):
     """
-    对openid进行签名
-    :param openid: 用户的openid
-    :return: access_token
+    对openid进行加密
+    :param openid: 要加密的openid数据
+    :return: 加密后的openid
     """
-    # SECRET_KEY  是系统配置文件下随机生成的密钥
-    # expires_in 是过期时间
-    serializer = Serializer(settings.SECRET_KEY, expires_in=600)
-    data = {'openid':openid} # 把数据包装成字典
-    token = serializer.dump(data) # 加密后返回的数据是bytes类型
-    return token.decode()
+    serializer = Serializer(secret_key=settings.SECRET_KEY, expires_in=600)
+    data = {'openid': openid}  # 把数据包装成字典
+    openid_sign = serializer.dumps(data)  # 加密后返回的数据是bytes类型
+    return openid_sign.decode()
 
 
 def check_openid_sign(openid_sign):

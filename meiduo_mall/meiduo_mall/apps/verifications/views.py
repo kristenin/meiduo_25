@@ -1,7 +1,5 @@
-from django.shortcuts import render
 from django.views import View
 from django_redis import get_redis_connection
-from meiduo_mall.libs.captcha.captcha import captcha
 from django import http
 from random import randint
 
@@ -9,14 +7,14 @@ from random import randint
 from meiduo_mall.libs.captcha.captcha import captcha
 from meiduo_mall.utils.response_code import RETCODE
 import logging
-from meiduo_mall.libs.yuntongxun.sms import CCP
+from celery_tasks.sms.tasks import send_sms_code
+
 from . import constants
 logger = logging.getLogger('django')
 # Create your views here.
 
 class ImageCodeView(View):
     """生成图形验证码"""
-    print("456")
     def get(self, request, uuid):
         """
         :param uuid: 唯一标识,用来区分当前的图形验证码属于哪个用户
@@ -93,7 +91,9 @@ class SMSCodeView(View):
 
         # 利用容联云SDK发短信
         # CCP().send_template_sms(手机号,[验证码, 提示用户验证码有效期多少分钟],短信模板)
-        CCP().send_template_sms(mobile,[sms_code, constants.SMS_CODE_REDIS_EXPIRES//60],constants.SEND_SMS_TEMPLATE_ID)
+        # CCP().send_template_sms(mobile,[sms_code, constants.SMS_CODE_REDIS_EXPIRES//60],constants.SEND_SMS_TEMPLATE_ID)
         # 需要把CCP这行代码先加入到一个指定的仓库中，后续在单独的一个线程、进程去异步执行，不再当下执行
+        send_sms_code.delay(mobile, sms_code)
+
         # 响应
         return http.JsonResponse({"code":RETCODE.OK, 'errmsg':'发送短信验证'})

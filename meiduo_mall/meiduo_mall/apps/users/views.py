@@ -12,6 +12,7 @@ from .models import User
 import logging
 from meiduo_mall.utils.response_code import RETCODE
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -210,6 +211,7 @@ class EmailView(mixins.LoginRequiredMixin, View):
         user.save()
 
         # 在此地还要发送一个邮件到email
+        
 
         # 响应添加邮箱结果
         return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'添加邮箱成功'})
