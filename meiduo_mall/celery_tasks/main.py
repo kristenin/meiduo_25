@@ -1,4 +1,8 @@
 from celery import Celery
+import os
+
+# 告诉celery它里面用的Django配置文件在哪里
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meiduo_mall.settings.dev")
 
 # 1. 创建celery实力对象（生产者）
 celery_app = Celery('meiduo')

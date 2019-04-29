@@ -8,11 +8,13 @@ from django_redis import get_redis_connection
 from django.conf import settings
 import json
 
+
 from .models import User
 import logging
 from meiduo_mall.utils.response_code import RETCODE
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
+from .utils import generate_verify_email_url
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -189,19 +191,21 @@ class UserInfoView(mixins.LoginRequiredMixin, View):
 
 
 class EmailView(mixins.LoginRequiredMixin, View):
-    """添加邮箱"""
-    def put(self,request):
-        """实现添加邮箱逻辑"""
-        # 接收参数
+    """添加用户邮箱"""
+
+    def put(self, request):
+
+        # 接收请求体email数据
         json_dict = json.loads(request.body.decode())
         email = json_dict.get('email')
 
-        # 校验参数
-        if all([email]) is False:
-            return http.HttpResponseForbidden("缺少email参数")
+        # 校验
+        if all([email]) is None:
+            return http.HttpResponseForbidden('缺少邮箱数据')
 
-        if  not re.match(r'^[a-z0-9][\w\.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$', email):
-            return http.HttpResponseForbidden('参数email有误')
+        if not re.match(r'^[a-z0-9][\w\.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$', email):
+            return http.HttpResponseForbidden('邮箱格式有误')
+
 
         # 获取到user
         user = request.user
@@ -211,7 +215,11 @@ class EmailView(mixins.LoginRequiredMixin, View):
         user.save()
 
         # 在此地还要发送一个邮件到email
-        
+        send_mail('美多','',settings.EMAIL_FROM,[email], html_message='dabaiya')
+        # send_mail(subject, "", settings.EMAIL_FROM, [to_email], html_message=html_message)
+        #
+        # verify_url = '邮件验证链接'
+        # send_verify_email.delay(email, verify_url)
 
-        # 响应添加邮箱结果
-        return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'添加邮箱成功'})
+        # 响应
+        return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK'})
