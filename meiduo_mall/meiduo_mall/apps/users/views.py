@@ -7,14 +7,14 @@ from django.db import DatabaseError
 from django_redis import get_redis_connection
 from django.conf import settings
 import json
-
+from celery_tasks.email.tasks import send_verify_email
 
 from .models import User
 import logging
 from meiduo_mall.utils.response_code import RETCODE
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
-from .utils import generate_verify_email_url
+from .utils import generate_verify_email_url, check_token_to_user
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -215,11 +215,27 @@ class EmailView(mixins.LoginRequiredMixin, View):
         user.save()
 
         # 在此地还要发送一个邮件到email
-        send_mail('美多','',settings.EMAIL_FROM,[email], html_message='dabaiya')
+        # send_mail('美多','',settings.EMAIL_FROM,[email], html_message='dabaiya')
         # send_mail(subject, "", settings.EMAIL_FROM, [to_email], html_message=html_message)
         #
-        # verify_url = '邮件验证链接'
-        # send_verify_email.delay(email, verify_url)
+        verify_url = generate_verify_email_url(user)
+        send_verify_email.delay(email, verify_url)
 
         # 响应
         return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK'})
+
+class VerifyEmailView(View):
+    """激活邮箱"""
+    def get(self,request):
+        """实现激活邮箱逻辑"""
+        token = request.GET.get('token')
+        # 解密并获取到user
+        user = check_token_to_user(token)
+        if user is None:
+            return http.HttpResponseForbidden('token无效')
+
+        # 修改当前user.email_active=True
+        user.email_active = True
+        user.save()
+        # 响应
+        return redirect('/info')

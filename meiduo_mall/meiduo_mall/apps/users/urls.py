@@ -22,4 +22,7 @@ urlpatterns = [
 
     # 设置用户邮箱
     url(r'^emails/$', views.EmailView.as_view()),
+
+    #
+    url(r'^emails/verification/$', views.VerifyEmailView.as_view()),
 ]
