@@ -15,6 +15,7 @@ from meiduo_mall.utils.response_code import RETCODE
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from .utils import generate_verify_email_url, check_token_to_user
+from meiduo_mall.utils.views import LoginRequiredView
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -239,3 +240,10 @@ class VerifyEmailView(View):
         user.save()
         # 响应
         return redirect('/info')
+
+class AddressView(LoginRequiredView):
+    """用户收获地址"""
+    def get(self,request):
+        """提供用户收获地址界面"""
+        return render(request,'user_center_site.html')
+

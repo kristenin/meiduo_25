@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # 'meiduo_mall.apps.users',
     'users',   # 用户模块应用
-    'oauth',
+    'oauth',   # QQ模块
+    'areas',   # 省市区模块
 ]
 
 MIDDLEWARE = [
