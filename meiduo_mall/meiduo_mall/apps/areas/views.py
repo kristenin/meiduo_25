@@ -14,6 +14,7 @@ class AreasView(View):
 
         # 如果area_id没有值,代表要查询所有省数据
         if area_id is None:
+
             # 先尝试性的去redis获取所有省的数据
             provinces_list = cache.get('provinces_list')
             if provinces_list is None:

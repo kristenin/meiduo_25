@@ -28,4 +28,15 @@ urlpatterns = [
 
     # 用户收获地址
     url(r'^addresses/$', views.AddressView.as_view()),
+    # 用户新增收获地址
+    url(r'^addresses/create/$', views.CreateAddressView.as_view()),
+
+    # 用户收货地址修改和删除
+    url(r'^addresses/(?P<address_id>\d+)/$', views.UpdateDestroyAddressView.as_view()),
+    # 用户设置默认地址
+    url(r'^addresses/(?P<address_id>\d+)/default/$', views.DefaultAddressView.as_view()),
+    # 修改用户地址标题
+    url(r'^addresses/(?P<address_id>\d+)/title/$', views.UpdateTitleAddressView.as_view()),
+    # 修改用户密码
+    url(r'^password/$', views.ChangePasswordView.as_view())
 ]
