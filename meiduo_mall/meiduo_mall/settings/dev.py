@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'users',   # 用户模块应用
     'oauth',   # QQ模块
     'areas',   # 省市区模块
+    'contents', # 首页
+    'goods',    # 商品
 ]
 
 MIDDLEWARE = [
