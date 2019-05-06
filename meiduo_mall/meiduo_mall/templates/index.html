@@ -107,7 +107,7 @@
                     <div class="level2">
                         {% for cat2 in group.cat_subs %}
                             <div class="list_group">
-                                <div class="group_name fl">{{ cat2.name }} &gt;</div>
+                                <div class="group_name fl">{{ cat2.name }} ></div>
                                 <div class="group_detail fl">
                                     {% for cat3 in cat2.cat_subs %}
                                         <a href="/list/{{ cat3.id }}/1/">{{ cat3.name }}</a>
