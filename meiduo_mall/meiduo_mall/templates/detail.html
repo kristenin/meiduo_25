@@ -131,22 +131,22 @@
                     <a @click="on_minus" class="minus fr">-</a>
                 </div>
             </div>
-            <div class="type_select">
-                <label>屏幕尺寸:</label>
-                <a href="javascript:;" class="select">13.3英寸</a>
-                <a href="javascript:;">15.4英寸</a>
-            </div>
-            <div class="type_select">
-                <label>颜色:</label>
-                <a href="javascript:;" class="select">深灰色</a>
-                <a href="javascript:;">银</a>
-            </div>
-            <div class="type_select">
-                <label>版本:</label>
-                <a href="javascript:;" class="select">core i5/8G内存/256G存储</a>
-                <a href="javascript:;">core i5/8G内存/128G存储</a>
-                <a href="javascript:;">core i5/8G内存/512G存储/Multi-Touch Bar</a>
-            </div>
+            {% for spec in spec_qs %}
+                <div class="type_select">
+                    <label>{{ spec.name }}:</label>
+                    {% for option in spec.spec_options %}
+                        {% if option.sku_id == sku.id %}
+                            <a href="#" class="select">{{ option.value }}</a>
+                        {% elif option.sku_id %}
+                            <a href="/detail/{{ option.sku_id }}/">{{ option.value }}</a>
+                        {% else %}
+                            <a href="#" style="border:#9f9f9f dashed 1px" title="此商品无货">{{ option.value }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                </div>
+            {% endfor %}
+
             <div class="total">总价：<em>[[ sku_amount ]]元</em></div>
             <div class="operate_btn">
                 <a href="javascript:;" class="add_cart" id="add_cart">加入购物车</a>
