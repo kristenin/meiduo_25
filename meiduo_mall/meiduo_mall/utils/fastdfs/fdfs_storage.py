@@ -26,4 +26,4 @@ class FastDFSStorage(Storage):
         :param name: file_id
         :return: http://192.168.190.150:8888/ + file_id
         """
-        return 'http://192.168.190.150:8888/' + name
+        return 'http://192.168.190.151:8888/' + name
