@@ -84,10 +84,14 @@ class DetailView(View):
             return render(request, '404.html')
         category = sku.category     # 获取当前sku所对应的三级分类
 
+        # 查询当前sku所对应的spu
+        spu = sku.spu
+
         context = {
             'categories': get_categories(), # 商品分类
             'breadcrumb': get_breadcrumb(category),  # 面包屑导航
-            'sku':sku,
-            'category':category,
+            'sku':sku,      # 当前要显示的sku模型对象
+            'category':category,    # 当前的显示sku所属的三级类别
+            'spu':spu,  # sku所属的spu
         }
         return render(request, 'detail.html', context)

@@ -176,16 +176,14 @@
             <div @click="on_tab_content('detail')" class="tab_content" :class="tab_content.detail?'current':''">
                 <dl>
                     <dt>商品详情：</dt>
-                    <dd>它纤薄如刃，轻盈如羽，却又比以往速度更快、性能更强大。它为你展现的，是迄今最明亮、最多彩的 Mac
-                        笔记本显示屏。它更配备了触控栏，一个内置于键盘的玻璃面多点触控条，让你能在需要时快速取用各种工具。MacBook Pro 是对我们突破性理念的一场出色演绎，而它，也正期待着演绎你的奇思妙想。
+                    <dd>{{ spu.desc_detail | safe}}
                     </dd>
                 </dl>
             </div>
             <div @click="on_tab_content('pack')" class="tab_content" :class="tab_content.pack?'current':''">
                 <dl>
                     <dt>规格与包装：</dt>
-                    <dd>它纤薄如刃，轻盈如羽，却又比以往速度更快、性能更强大。它为你展现的，是迄今最明亮、最多彩的 Mac
-                        笔记本显示屏。它更配备了触控栏，一个内置于键盘的玻璃面多点触控条，让你能在需要时快速取用各种工具。MacBook Pro 是对我们突破性理念的一场出色演绎，而它，也正期待着演绎你的奇思妙想。
+                    <dd>{{ spu.desc_pack | safe }}
                     </dd>
                 </dl>
             </div>
@@ -208,8 +206,7 @@
             <div @click="on_tab_content('service')" class="tab_content" :class="tab_content.service?'current':''">
                 <dl>
                     <dt>售后服务：</dt>
-                    <dd>它纤薄如刃，轻盈如羽，却又比以往速度更快、性能更强大。它为你展现的，是迄今最明亮、最多彩的 Mac
-                        笔记本显示屏。它更配备了触控栏，一个内置于键盘的玻璃面多点触控条，让你能在需要时快速取用各种工具。MacBook Pro 是对我们突破性理念的一场出色演绎，而它，也正期待着演绎你的奇思妙想。
+                    <dd>{{ spu.desc_service | safe }}
                     </dd>
                 </dl>
             </div>
