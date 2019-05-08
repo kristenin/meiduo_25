@@ -1,12 +1,11 @@
 from django.shortcuts import render, redirect, reverse
 from django.views import View
 from django import http
-import re
+import re,json
 from django.contrib.auth import login, authenticate, logout, mixins
 from django.db import DatabaseError
 from django_redis import get_redis_connection
 from django.conf import settings
-import json
 from celery_tasks.email.tasks import send_verify_email
 
 from .models import User,Address
@@ -16,7 +15,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from .utils import generate_verify_email_url, check_token_to_user
 from meiduo_mall.utils.views import LoginRequiredView
-from . import models
+from goods.models import SKU
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -473,9 +472,11 @@ class ChangePasswordView(LoginRequiredView):
     def get(self, request):
         return render(request, 'user_center_pass.html')
 
-class UserBrowseHistory(LoginRequiredView,View):
+
+class UserBrowseHistory(LoginRequiredView, View):
     """用户浏览记录"""
-    def post(self,request):
+
+    def post(self, request):
         """保存用户浏览记录"""
         # 接收参数
         json_dict = json.loads(request.body.decode())
@@ -483,42 +484,43 @@ class UserBrowseHistory(LoginRequiredView,View):
 
         # 校验参数
         try:
-            models.SKU.objects.get(id=sku_id)
-        except models.SKU.DoesNotExist:
+            SKU.objects.get(id=sku_id)
+        except SKU.DoesNotExist:
             return http.HttpResponseForbidden('sku不存在')
 
-        # 保存用户浏览器数据
+        # 保存用户浏览数据
         redis_conn = get_redis_connection('history')
         pl = redis_conn.pipeline()
         user_id = request.user.id
 
         # 先去重
-        pl.lrem('history_%s' % user_id,0,sku_id)
+        pl.lrem('history_%s' % user_id, 0, sku_id)
         # 再存储
-        pl.lpush('history_%s' % user_id,sku_id)
+        pl.lpush('history_%s' % user_id, sku_id)
         # 最后截取
-        pl.ltrim('history_%s' % user_id,0,4)
+        pl.ltrim('history_%s' % user_id, 0, 4)
         # 执行管道
         pl.execute()
 
         # 响应结果
-        return http.JsonResponse({'code': RETCODE.OK, 'errmsg':'OK'})
+        return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK'})
 
-    def get(self,request):
+    def get(self, request):
         """获取用户浏览记录"""
-        # 获取redis存储的sku_id列表信息
+        # 获取Redis存储的sku_id列表信息
         redis_conn = get_redis_connection('history')
-        sku_ids = redis_conn.lrange('history_%s' % request.user.id,0,-1)
+        sku_ids = redis_conn.lrange('history_%s' % request.user.id, 0, -1)
 
         # 根据sku_ids列表数据，查询出商品sku信息
         skus = []
         for sku_id in sku_ids:
-            sku = models.SKU.objects.get(id=sku_id)
-            skus.append({
-                'id':sku.id,
-                'name':sku.name,
-                'default_image_url':sku.default_image.url,
-                'price':sku.price
-            })
-        return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'OK', 'skus':skus})
+            sku = SKU.objects.get(id=sku_id)
 
+            skus.append({
+                'id': sku.id,
+                'name': sku.name,
+                'default_image_url': sku.default_image.url,
+                'price': sku.price
+            })
+
+        return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK', 'skus': skus})

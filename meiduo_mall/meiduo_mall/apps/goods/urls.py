@@ -14,4 +14,5 @@ urlpatterns = [
 
     # 商品类别每日访问量统计
     url(r'^detail/visit/(?P<category_id>\d+)/', views.DetailVisitView.as_view()),
+
 ]

@@ -41,5 +41,5 @@ urlpatterns = [
     url(r'^password/$', views.ChangePasswordView.as_view()),
 
     # 保存用户浏览记录
-    url(r'^browse_histories/', views.UserBrowseHistory.as_view()),
+    url(r'^browse_histories/$', views.UserBrowseHistory.as_view()),
 ]

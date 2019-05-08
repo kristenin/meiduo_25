@@ -1,10 +1,14 @@
+import json
+
 from django.shortcuts import render
 from django.views import View
 from django import http
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django_redis import get_redis_connection
 
 from contents.utils import get_categories
+from meiduo_mall.utils.views import LoginRequiredView
 from .models import GoodsCategory,SKU,GoodsVisitCount
 from .utils import get_breadcrumb
 from meiduo_mall.utils.response_code import RETCODE
