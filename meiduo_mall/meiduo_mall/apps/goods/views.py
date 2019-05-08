@@ -2,9 +2,10 @@ from django.shortcuts import render
 from django.views import View
 from django import http
 from django.core.paginator import Paginator
+from django.utils import timezone
 
 from contents.utils import get_categories
-from .models import GoodsCategory,SKU
+from .models import GoodsCategory,SKU,GoodsVisitCount
 from .utils import get_breadcrumb
 from meiduo_mall.utils.response_code import RETCODE
 
@@ -132,3 +133,28 @@ class DetailView(View):
             'spec_qs': spu_spec_qs,  # 当前商品的所有规格数据
         }
         return render(request, 'detail.html', context)
+
+class DetailVisitView(View):
+    """商品类别每日访问量统计"""
+    def post(self, request, category_id):
+        try:
+            # 校验category_id 是否真实存在
+            category = GoodsCategory.objects.get(id=category_id)
+        except GoodsCategory.DoesNotExist:
+            return http.HttpResponseForbidden('商品类别不存在')
+
+        # 获取当前日期
+        today_date = timezone.localdate()
+        try:
+            # 查询当前类别今天没有统计过
+            count_data = GoodsVisitCount.objects.get(category=category, date=today_date)
+        except GoodsVisitCount.DoesNotExist:
+            # 如果当前类别今天是第一次来统计，就创建一个新纪录，并给它指定是统计哪一个类别
+            count_data = GoodsVisitCount(category=category)
+
+        count_data.count += 1   # 累加浏览量
+        count_data.save()
+
+        return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'ok'})
+
+

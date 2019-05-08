@@ -16,6 +16,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from .utils import generate_verify_email_url, check_token_to_user
 from meiduo_mall.utils.views import LoginRequiredView
+from . import models
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -466,10 +467,58 @@ class UpdateTitleAddressView(LoginRequiredView):
         return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK'})
 
 
-
-
 class ChangePasswordView(LoginRequiredView):
     """修改密码"""
 
     def get(self, request):
         return render(request, 'user_center_pass.html')
+
+class UserBrowseHistory(LoginRequiredView,View):
+    """用户浏览记录"""
+    def post(self,request):
+        """保存用户浏览记录"""
+        # 接收参数
+        json_dict = json.loads(request.body.decode())
+        sku_id = json_dict.get('sku_id')
+
+        # 校验参数
+        try:
+            models.SKU.objects.get(id=sku_id)
+        except models.SKU.DoesNotExist:
+            return http.HttpResponseForbidden('sku不存在')
+
+        # 保存用户浏览器数据
+        redis_conn = get_redis_connection('history')
+        pl = redis_conn.pipeline()
+        user_id = request.user.id
+
+        # 先去重
+        pl.lrem('history_%s' % user_id,0,sku_id)
+        # 再存储
+        pl.lpush('history_%s' % user_id,sku_id)
+        # 最后截取
+        pl.ltrim('history_%s' % user_id,0,4)
+        # 执行管道
+        pl.execute()
+
+        # 响应结果
+        return http.JsonResponse({'code': RETCODE.OK, 'errmsg':'OK'})
+
+    def get(self,request):
+        """获取用户浏览记录"""
+        # 获取redis存储的sku_id列表信息
+        redis_conn = get_redis_connection('history')
+        sku_ids = redis_conn.lrange('history_%s' % request.user.id,0,-1)
+
+        # 根据sku_ids列表数据，查询出商品sku信息
+        skus = []
+        for sku_id in sku_ids:
+            sku = models.SKU.objects.get(id=sku_id)
+            skus.append({
+                'id':sku.id,
+                'name':sku.name,
+                'default_image_url':sku.default_image.url,
+                'price':sku.price
+            })
+        return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'OK', 'skus':skus})
+
