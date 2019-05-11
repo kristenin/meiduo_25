@@ -13,6 +13,7 @@ import re
 from django_redis import get_redis_connection
 from .utils import generate_openid_signature,check_openid_sign
 from users.models import User
+from carts.utils import merge_cart_cookie_to_redis
 
 
 logger = logging.getLogger('django')
@@ -82,9 +83,11 @@ class OAuthUserView(View):
             # 直接登录成功:  状态操持,
             response = redirect(state)
             response.set_cookie('username', user.username, max_age=settings.SESSSION_COOKIE_AGE)
+
+            # 登录成功那一刻合并购物车
+            merge_cart_cookie_to_redis(request, user, response)
+
             return response
-
-
         # return http.JsonResponse({'openid': openid})
 
     def post(self, request):
