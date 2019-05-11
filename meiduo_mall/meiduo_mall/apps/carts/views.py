@@ -313,3 +313,48 @@ class CartsSelectAllView(View):
             response.set_cookie('carts', cart_str)
         return response
 
+
+class CartsSimpleView(View):
+    """展示简单的购物车数据"""
+    def get(self, request):
+        user = request.user
+        if user.is_authenticated:
+            """登录用户获取redis购物车数据"""
+            # 创建redis连接对象
+            redis_conn = get_redis_connection('carts')
+            # 获取hash数据
+            redis_cart = redis_conn.hgetall('carts_%s' % user.id)
+            # 获取set数据
+            selected_ids = redis_conn.smembers('selected_%s' % user.id)
+            # 将redis购物车数据格式转换成和cookie购物车数据格式一致，目的为了后续数据查询转换代码和cookie共用一套代码
+            cart_dict = {}
+            for sku_id_bytes, count_bytes in redis_cart.items():
+                cart_dict[int(sku_id_bytes)] = {
+                    'count':int(count_bytes),
+                    'selected':sku_id_bytes in selected_ids
+                }
+        else:
+            """未登录用户获取cookie购物车数据"""
+            # 获取cookie购物车数据
+            cart_str = request.COOKIES.get('carts')
+            # 判断有没有cookie购物车数据
+            if cart_str:
+                # 将字符串转换成字典
+                cart_dict = pickle.loads(base64.b64decode(cart_str.encode()))
+            else:
+                return http.JsonResponse({'code':RETCODE.DBERR,'errmsg':'没有购物车数据'})
+
+        # 查询到购物车中所有sku_id对应的sku数据
+        sku_qs = SKU.objects.filter(id__in=cart_dict.keys())
+        cart_skus = []  # 用来装每个装转换好的sku字典
+        for sku in sku_qs:
+            sku_dict = {
+                'id': sku.id,
+                'name': sku.name,
+                'price':str(sku.price),
+                'default_image_url': sku.default_image.url,
+                'count':int(cart_dict[sku.id]['count']) # 方便js中的json对数据渲染
+            }
+            cart_skus.append(sku_dict)
+
+        return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'OK', 'cart_skus':cart_skus})

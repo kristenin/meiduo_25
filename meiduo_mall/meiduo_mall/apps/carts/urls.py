@@ -7,4 +7,7 @@ urlpatterns = [
 
     # 全选购物车
     url(r'^carts/selection/$', views.CartsSelectAllView.as_view()),
+
+    # 简单购物车
+    url(r'^carts/simple/$', views.CartsSimpleView.as_view()),
 ]
