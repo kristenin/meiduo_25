@@ -17,6 +17,7 @@ from django.conf.urls import url,include
 from django.contrib import admin
 
 urlpatterns = [
+    url(r'^search/', include('haystack.urls')), # 搜索模块
     # users
     url(r'^', include('users.urls', namespace='users')),   # 用户模块
 
@@ -32,6 +33,6 @@ urlpatterns = [
 
     url(r'^', include('carts.urls', namespace='carts')),     # 购物车模块
 
-    url(r'^search/', include('haystack.urls')), # 搜索模块
+    url(r'^', include('orders.urls', namespace='orders'))    # 订单模块
 ]
 
