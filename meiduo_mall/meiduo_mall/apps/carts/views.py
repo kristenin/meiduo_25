@@ -265,3 +265,51 @@ class CartsView(View):
 
         # 响应
         return response
+
+
+class CartsSelectAllView(View):
+    """全选购物车"""
+    def put(self,request):
+        # 接收和校验参数
+        json_dict = json.loads(request.body.decode())
+        selected = json_dict.get('selected')
+
+        if isinstance(selected,bool) is False:
+            return http.HttpResponseForbidden('参数有误')
+
+        user = request.user
+        response = http.JsonResponse({'code':RETCODE.OK, 'errmsg':'OK'})
+        if user.is_authenticated:
+            """登录用户操作redis数据"""
+            # 创建redis连接对象
+            redis_conn = get_redis_connection('carts')
+            # 获取到hash购物车数据(sku_id:count)
+            redis_cart = redis_conn.hgetall('carts_%s' % user.id)
+            # 判断当前是全选还是不全选
+            if selected:
+                # 如果是全选把hash中的所有sku_id添加到set集合中
+                redis_conn.sadd('selected_%s' % user.id, *redis_cart.keys())
+            else:
+                # 如果取消全选，把hash中的所有sku_id从set集合中删除
+                redis_conn.delete('selected_%s' % user.id) # 将指定key对应的数据直接删除
+
+        else:
+            """未登录用户操作cookie数据"""
+            # 获取cookie购物车数据
+            cart_str = request.COOKIES.get('carts')
+            # 判断有没有获取到cookie购物车数据
+            if cart_str:
+                # 如果获取到把字符串转换成字典
+                cart_dict = pickle.loads(base64.b64decode(cart_str.encode()))
+            else:
+                # 如果没有获取到直接响应
+                return http.JsonResponse({'code':RETCODE.DBERR, 'errmsg':'cookie数据没有获取到'})
+            # 遍历cookie购物车大字典，把里面的selected改为True或False
+            for sku_id in cart_dict:
+                cart_dict[sku_id]['selected'] = selected
+            # 把字典转换成字符串
+            cart_str = base64.b64encode(pickle.dumps(cart_dict)).decode()
+            # 设置cookie
+            response.set_cookie('carts', cart_str)
+        return response
+
