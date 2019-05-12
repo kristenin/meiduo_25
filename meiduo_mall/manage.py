@@ -4,7 +4,7 @@ import sys
 
 if __name__ == "__main__":
     # os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meiduo_mall.settings")
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meiduo_mall.settings.dev")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "meiduo_mall.settings.dev") # 新的开发环境配置文件
     try:
         from django.core.management import execute_from_command_line
     except ImportError:
