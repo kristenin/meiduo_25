@@ -1,7 +1,7 @@
 from django.db import models
 from meiduo_mall.utils.models import BaseModel
 from goods.models import SKU
-from users.views import User
+from users.models import User
 from users.models import Address
 
 
