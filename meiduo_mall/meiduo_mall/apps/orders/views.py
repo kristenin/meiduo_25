@@ -182,3 +182,28 @@ class OrderCommitView(LoginRequiredView):
         pl.execute()
 
         return http.JsonResponse({'code': RETCODE.OK, 'errmsg': '提交订单成功', 'order_id': order_id})
+
+class OrderSuccessView(LoginRequiredView):
+    """提交订单成功"""
+    def get(self,request):
+        # 获取请求路径中的查询字符串参数（形如?k1=v1&k2=v2），可以通过request.GET属性获取，返回QueryDict对象。
+        # 接收查询参数
+        order_id = request.GET.get('order_id')
+        payment_amount = request.GET.get('payment_amount')
+        pay_method = request.GET.get('pay_method')
+
+
+        # 校验
+        try:
+            OrderInfo.objects.get(order_id=order_id, pay_method=pay_method,total_amount=payment_amount)
+        except OrderInfo.DoesNotExist:
+            return http.HttpResponseForbidden('订单有误')
+
+        # 包装要传给模板的数据
+        context = {
+            'order_id': order_id,
+            'payment_amount':payment_amount,
+            'pay_method':pay_method
+        }
+
+        return render(request, 'order_success.html', context)

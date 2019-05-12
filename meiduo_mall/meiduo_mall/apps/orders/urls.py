@@ -7,4 +7,7 @@ urlpatterns = [
 
     # 订单提交
     url(r'^orders/commit/$', views.OrderCommitView.as_view()),
+
+    # 订单提交成功页面
+    url(r'^orders/success/$', views.OrderSuccessView.as_view()),
 ]
