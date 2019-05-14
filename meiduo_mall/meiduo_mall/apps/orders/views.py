@@ -1,20 +1,21 @@
 from django.shortcuts import render
 from django_redis import get_redis_connection
+from decimal import Decimal
+import json
 from django import http
 from django.utils import timezone
 from django.db import transaction
-
-from goods.models import SKU
-import json
-from decimal import Decimal
-from .models import OrderInfo,OrderGoods
-from users.models import Address
-from meiduo_mall.utils.views import LoginRequiredView
-from meiduo_mall.utils.response_code import RETCODE
 from django.views import View
 
+from meiduo_mall.utils.views import LoginRequiredView
+from users.models import Address
+from goods.models import SKU
+from .models import OrderInfo, OrderGoods
+from meiduo_mall.utils.response_code import RETCODE
+
+
 class OrderSettlementView(LoginRequiredView):
-    """结算订单"""
+    """去结算界面"""
 
     def get(self, request):
         user = request.user
@@ -61,8 +62,10 @@ class OrderSettlementView(LoginRequiredView):
         }
         return render(request, 'place_order.html', context)
 
+
 class OrderCommitView(LoginRequiredView):
-    """订单提交"""
+    """提交订单"""
+
     def post(self, request):
 
         # 接收前端传入的收货地址,及支付方式
@@ -84,7 +87,8 @@ class OrderCommitView(LoginRequiredView):
         # 20190511121110 + %09d % user.id
         user = request.user
         # 生成订单编号
-        order_id = timezone.localtime().strftime('%Y%m%d%H%M%S') + ('%09d' % user.id)
+        # order_id = timezone.localtime().strftime('%Y%m%d%H%M%S') + ('%09d' % user.id)
+        order_id = timezone.now().strftime('%Y%m%d%H%M%S') + ('%09d' % user.id)
 
         # 订单状态
         status = (OrderInfo.ORDER_STATUS_ENUM.get('UNPAID')
@@ -92,6 +96,7 @@ class OrderCommitView(LoginRequiredView):
                   else OrderInfo.ORDER_STATUS_ENUM.get('UNSEND'))
 
         with transaction.atomic():  # 手动创建事务
+
             # 创建事务保存点
             save_point = transaction.savepoint()
             try:
@@ -129,8 +134,8 @@ class OrderCommitView(LoginRequiredView):
                         origin_stock = sku.stock
                         origin_sales = sku.sales
 
-                        import time
-                        time.sleep(5)
+                        # import time
+                        # time.sleep(5)
 
                         # 判断库存
                         if buy_count > origin_stock:
@@ -140,16 +145,15 @@ class OrderCommitView(LoginRequiredView):
 
                         new_stock = origin_stock - buy_count  # 计算新的库存
                         new_sales = origin_sales + buy_count  # 计算新的销量
-                        # # 修改sku的库存
+                        # 修改sku的库存
                         # sku.stock = new_stock
                         # # 修改sku的销量
                         # sku.sales = new_sales
                         # sku.save()
-
                         # 使用乐观锁解决抢夺时数据库写入脏数据
-                        result = SKU.objects.filter(id=sku_id, stock=origin_stock).update(stock=new_stock, sales=new_sales)
-                        if result == 0:
-                            # 如果下单失败，给它无限次下单机会，直到成功，或库存不足
+                        result = SKU.objects.filter(id=sku_id, stock=origin_stock).update(stock=new_stock,
+                                                                                          sales=new_sales)
+                        if result == 0:  # 如果下单失败,给它无限次下单机会,只到成功,或库存不足
                             continue
 
                         # 修改spu的销量
@@ -167,72 +171,82 @@ class OrderCommitView(LoginRequiredView):
                         order.total_count += buy_count  # 累加订单商品总数量
                         order.total_amount += (sku.price * buy_count)  # 累加商品总价
 
-                        break   # 如果当前这个商品下单成功跳出死循环
+                        break  # 如果当前这个商品下单成功跳出死循环
 
                 order.total_amount += order.freight  # 累加运费
                 order.save()
-            except  Exception:
+            except Exception:
                 transaction.savepoint_rollback(save_point)  # 回滚
-                return http.JsonResponse({'code':RETCODE.DBERR, 'errmsg':'下单失败'})
+                return http.JsonResponse({'code': RETCODE.DBERR, 'errmsg': '下单失败'})
             else:
-                transaction.savepoint_commit(save_point)    # 提交事务
+                transaction.savepoint_commit(save_point)  # 提交事务
 
         pl = redis_conn.pipeline()
-        pl.hdel('carts_%s' % user.id, * cart_selected)  # 删除hash中已经购买商品数据[2:1]
+        pl.hdel('carts_%s' % user.id, *cart_selected)  # 删除hash中已经购买商品数据{2: 1}
         pl.delete('selected_%s' % user.id)
         pl.execute()
 
         return http.JsonResponse({'code': RETCODE.OK, 'errmsg': '提交订单成功', 'order_id': order_id})
 
-class OrderSuccessView(LoginRequiredView):
-    """提交订单成功"""
-    def get(self,request):
-        # 获取请求路径中的查询字符串参数（形如?k1=v1&k2=v2），可以通过request.GET属性获取，返回QueryDict对象。
-        # 接收查询参数
-        order_id = request.GET.get('order_id')
-        payment_amount = request.GET.get('payment_amount')
-        pay_method = request.GET.get('pay_method')
 
+class OrderSuccessView(LoginRequiredView):
+    """展示提交订单成功界面"""
+
+    def get(self, request):
+
+        # 接收查询参数
+        query_dict = request.GET
+        order_id = query_dict.get('order_id')
+        payment_amount = query_dict.get('payment_amount')
+        pay_method = query_dict.get('pay_method')
 
         # 校验
         try:
-            OrderInfo.objects.get(order_id=order_id, pay_method=pay_method,total_amount=payment_amount)
+            OrderInfo.objects.get(order_id=order_id, pay_method=pay_method, total_amount=payment_amount)
         except OrderInfo.DoesNotExist:
             return http.HttpResponseForbidden('订单有误')
 
         # 包装要传给模板的数据
         context = {
             'order_id': order_id,
-            'payment_amount':payment_amount,
-            'pay_method':pay_method
+            'payment_amount': payment_amount,
+            'pay_method': pay_method
         }
 
         return render(request, 'order_success.html', context)
 
+
 class OrderCommentView(LoginRequiredView):
-    def get(self,request):
+    """订单评价"""
+
+    def get(self, request):
+        """展示订单评价界面"""
+        # 接收查询参数
         order_id = request.GET.get('order_id')
+        # 校验
         try:
-            OrderInfo.objects.get(order_id=order_id, user=request.user)
+            order = OrderInfo.objects.get(order_id=order_id, user=request.user,
+                                          status=OrderInfo.ORDER_STATUS_ENUM['UNCOMMENT'])
         except OrderInfo.DoesNotExist:
-            return http.HttpResponseForbidden('订单不存在')
+            return http.HttpResponseForbidden('订单有误')
 
-        try:
-            uncomment_goods = OrderGoods.objects.filter(order_id=order_id, is_commented=False)
-        except Exception:
-            return http.HttpResponseServerError('订单商品信息出错')
-
+        # 查询当前订单中所有未评价的商品
+        # order_goods_qs = order.skus.filter(is_commented=False)
+        order_goods_qs = OrderGoods.objects.filter(order=order, is_commented=False)
+        # 构造前端渲染需要的数据
         uncomment_goods_list = []
-        for goods in uncomment_goods:
+        for order_goods in order_goods_qs:
+            sku = order_goods.sku
             uncomment_goods_list.append({
-                'order_id':goods.order.order_id,
-                'sku_id': goods.sku.id,
-                'name': goods.sku.name,
-                'price':str(goods.price),
-                'default_image_url':goods.sku.default_image.url,
-                'comment':goods.comment,
-                'score':goods.score,
-                'is_anonymous':str(goods.is_anonymous),
+                'order_id': order_id,
+                'sku_id': sku.id,
+                'default_image_url': sku.default_image.url,
+                'name': sku.name,
+                'price': str(sku.price),
+                'score': order_goods.score,
+                'comment': order_goods.comment,
+                'is_anonymous': str(order_goods.is_anonymous),
+                'is_comment': str(order_goods.is_commented)
             })
 
         context = {
@@ -240,59 +254,79 @@ class OrderCommentView(LoginRequiredView):
         }
         return render(request, 'goods_judge.html', context)
 
-
     def post(self, request):
+        """提交评价信息"""
+        # 获取请求体中的数据
         json_dict = json.loads(request.body.decode())
         order_id = json_dict.get('order_id')
         sku_id = json_dict.get('sku_id')
-        score = json_dict.get('score')
         comment = json_dict.get('comment')
+        score = json_dict.get('score')
         is_anonymous = json_dict.get('is_anonymous')
 
-        if not all([order_id, sku_id, score, comment]):
+        # 校验
+        if all([order_id, sku_id, comment, score]) is False:
             return http.HttpResponseForbidden('缺少必传参数')
         try:
-            OrderInfo.objects.filter(order_id=order_id, user=request.user, status=OrderInfo.ORDER_STATUS_ENUM['UNCOMMENT'])
+            order = OrderInfo.objects.get(order_id=order_id, user=request.user, status=OrderInfo.ORDER_STATUS_ENUM['UNCOMMENT'])
         except OrderInfo.DoesNotExist:
-            return http.HttpResponseForbidden('参数order_id错误')
+            return http.HttpResponseForbidden('订单信息有误')
 
         try:
             sku = SKU.objects.get(id=sku_id)
         except SKU.DoesNotExist:
-            return http.HttpResponseForbidden('参数sku_id错误')
+            return http.HttpResponseForbidden('sku不存在')
 
-        if is_anonymous:
-            if not isinstance(is_anonymous, bool):
-                return http.HttpResponseForbidden('参数is_anonymous错误')
+        if isinstance(is_anonymous, bool) is False:
+            return http.HttpResponseForbidden('参数类型有误')
 
-        OrderGoods.objects.filter(order_id=order_id, sku_id=sku_id, is_commented=False).update(
-            comment=comment,
-            score=score,
+
+        # 修改OrderGoods中的评价信息
+        OrderGoods.objects.filter(sku_id=sku_id, is_commented=False).update(
             is_anonymous=is_anonymous,
-            is_commented = True
+            score=score,
+            comment=comment,
+            is_commented=True
         )
-
+        # 修改sku和spu的评价量
         sku.comments += 1
         sku.save()
 
         sku.spu.comments += 1
         sku.spu.save()
-
+        # 判断订单中的商品是否全部评价完成,如果都评价后将订单状态修改为已完成
         if OrderGoods.objects.filter(order_id=order_id, is_commented=False).count() == 0:
-            OrderInfo.objects.filter(order_id=order_id).update(status=OrderInfo.ORDER_STATUS_ENUM['FINSHED'])
+            order.status = OrderInfo.ORDER_STATUS_ENUM['FINISHED']
+            order.save()
 
-        return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'评价成功'})
+        # 响应
+        return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK'})
+
+
 
 class GoodsCommentView(View):
-    def get(self, request, sku_id):
-        order_goods_list = OrderGoods.objects.filter(sku_id=sku_id, is_commented=True).order_by('-create_time')
+    """获取评价信息"""
 
-        comment_list = []
-        for order_goods in order_goods_list:
-            username = order_goods.order.user.username
-            comment_list.append({
-                'username': username[0] + "***" + username[-1] if order_goods.is_anonymous else username,
-                'comment': order_goods.comment,
+    def get(self, request, sku_id):
+        # 校验
+        try:
+            sku = SKU.objects.get(id=sku_id)
+        except SKU.DoesNotExist:
+            return http.HttpResponseForbidden('sku不存在')
+
+        # 获取OrderGoods中的当前sku_id的所有OrderGoods
+        order_goods_qs = OrderGoods.objects.filter(sku_id=sku_id, is_commented=True).order_by('-create_time')
+
+        comments = []
+        # 构造前端需要的数据格式  username, score , comment
+        for order_goods in order_goods_qs:
+            username = order_goods.order.user.username  # 获取当前订单商品所属用户名
+
+            comments.append({
+                'username': (username[0] + '***' + username[-1]) if order_goods.is_anonymous else username,
                 'score': order_goods.score,
+                'comment': order_goods.comment
             })
-        return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'OK', 'comment_list': comment_list})
+
+        # 响应
+        return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK', 'comment_list': comments})

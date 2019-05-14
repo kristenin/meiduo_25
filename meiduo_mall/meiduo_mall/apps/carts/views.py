@@ -363,10 +363,10 @@ class CartsSimpleView(View):
         return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'OK', 'cart_skus':cart_skus})
 
 
-class GetCartsTime(View):
-    def get(self,request):
-        user = request.user
-        redis_conn = get_redis_connection('carts')
-        expire = redis_conn.ttl('carts_%s' % user.id)
-
-        return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'购物车倒计时', 'expire':expire})
+# class GetCartsTime(View):
+#     def get(self,request):
+#         user = request.user
+#         redis_conn = get_redis_connection('carts')
+#         expire = redis_conn.ttl('carts_%s' % user.id)
+#
+#         return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'购物车倒计时', 'expire':expire})

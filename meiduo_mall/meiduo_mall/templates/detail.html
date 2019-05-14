@@ -121,7 +121,7 @@
             <p>【{{ sku.caption }}】</p>
             <div class="price_bar">
                 <span class="show_pirce">¥<em>{{ sku.price }}</em></span>
-                <a href="javascript:;" class="goods_judge">{{ sku.comments }}人评价</a>
+                <a href="javascript:;" class="goods_judge">[[comments.length]]人评价</a>
             </div>
             <div class="goods_num clearfix">
                 <div class="num_name fl">数 量：</div>
@@ -189,16 +189,13 @@
             </div>
             <div @click="on_tab_content('comment')" class="tab_content" :class="tab_content.comment?'current':''">
                 <ul class="judge_list_con">
-                    <li class="judge_list fl">
+                    <li class="judge_list fl" v-for = "comment in comments">
                         <div class="user_info fl">
                             <img src="/static/images/cat.jpg">
-                            <b>潇***啼</b>
-                        </div>
+                            <b>[[ comment.username ]]</b>
                         <div class="judge_info fl">
                             <div class="stars_five"></div>
-                            <div class="judge_detail">
-                                派送非常快，第二天上午就收到。2天使用初步总结，前一部手机也是华为P9plus.MATE10pro包装原封未拆精致大气。拆开后第一眼就看到宝石蓝的手机，非常惊艳；然后就是配件一应俱全。开机各方面设置，把通讯录、短信等同步好，同品牌手机同步很快。和P9plus一样的后置指纹识别很方便。录制指纹容易，解锁非常快，秒开！屏幕完好，默认分辨率显示效果很好。
-                            </div>
+                            <div class="judge_detail">[[ comment.comment ]]</div>
                         </div>
                     </li>
                 </ul>
