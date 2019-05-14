@@ -568,5 +568,3 @@ class UserOrderInfoView(LoginRequiredView):
             'total_page': total_page    # 总页数
         }
         return render(request, 'user_center_order.html', context)
-
-

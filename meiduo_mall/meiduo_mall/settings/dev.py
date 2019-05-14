@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'contents', # 首页
     'goods',    # 商品
     'orders',   # 订单
+    'payment',  # 支付
 ]
 
 MIDDLEWARE = [
@@ -137,7 +138,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -274,3 +275,9 @@ HAYSTACK_CONNECTIONS = {
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 HAYSTACK_SEARCH_RESULTS_PER_PAGE = 5    # 每页显示五条数据
+
+# 支付宝
+ALIPAY_APPID = '2016091900551154'
+ALIPAY_DEBUG = True  # 表示是沙箱环境还是真实支付环境
+ALIPAY_URL = 'https://openapi.alipaydev.com/gateway.do'
+ALIPAY_RETURN_URL = 'http://www.meiduo.site:8000/payment/status/'

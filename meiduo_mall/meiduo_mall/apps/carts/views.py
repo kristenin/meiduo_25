@@ -41,9 +41,12 @@ class CartsView(View):
             #  hincrby()
             pl.hincrby('carts_%s' % user.id, sku_id, count)
 
+
             # sadd()
             if selected:    # 只有勾选的才向set集合中添加
                 pl.sadd('selected_%s' % user.id, sku_id)
+
+            pl.expire('carts_%s' % user.id, 60)
 
             # 执行管道
             pl.execute()
@@ -358,3 +361,12 @@ class CartsSimpleView(View):
             cart_skus.append(sku_dict)
 
         return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'OK', 'cart_skus':cart_skus})
+
+
+class GetCartsTime(View):
+    def get(self,request):
+        user = request.user
+        redis_conn = get_redis_connection('carts')
+        expire = redis_conn.ttl('carts_%s' % user.id)
+
+        return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'购物车倒计时', 'expire':expire})

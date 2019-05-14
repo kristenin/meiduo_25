@@ -10,4 +10,8 @@ urlpatterns = [
 
     # 订单提交成功页面
     url(r'^orders/success/$', views.OrderSuccessView.as_view()),
+
+    url(r'^orders/comment/$', views.OrderCommentView.as_view()),
+
+    url(r'^comments/(?P<sku_id>\d+)/$', views.GoodsCommentView.as_view()),
 ]

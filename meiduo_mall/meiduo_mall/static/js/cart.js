@@ -10,6 +10,8 @@ var vm = new Vue({
         total_selected_amount: 0,
         carts_tmp: [],
         username: '',
+        expire:0,
+        cart_expire_time:"",
     },
     computed: {
         selected_all(){
@@ -34,8 +36,45 @@ var vm = new Vue({
 
         // 计算被勾选的商品总金额和总数量
         this.compute_total_selected_amount_count();
+
+        this.get_expire();
     },
     methods: {
+        get_expire(){
+             var url = this.host + '/time/';
+                axios.get(url, {
+                    responseType: 'json'
+                })
+                    .then(response => {
+                        if (response.data.code == '0') {
+
+                        this.expire = response.data.expire;
+                        // var num = 60;
+                        // 设置一个计时器
+                        var t = setInterval(() => {
+                            if (this.expire < 1 ) {
+                                // 如果计时器到最后, 清除计时器对象
+                                clearInterval(t);
+                                // 将点击获取验证码的按钮展示的文本回复成原始文本
+                                this.cart_expire_time = '';
+                                // location.href = '/carts/';
+
+                            } else {
+                                this.expire -= 1;
+                                // 展示倒计时信息
+                                this.cart_expire_time = "购物车倒计时：" + this.expire + '秒';
+                            }
+                        }, 1000, 60)
+                    } else { // 参数错误
+                        alert(response.data.errmsg);
+                    }
+                    })
+                    .catch(error => {
+                        console.log(error.response);
+                    })
+        },
+
+
         // 初始化购物车数据并渲染界面
         render_carts(){
             // 渲染界面

@@ -10,4 +10,6 @@ urlpatterns = [
 
     # 简单购物车
     url(r'^carts/simple/$', views.CartsSimpleView.as_view()),
+
+    url(r'^time/$', views.GetCartsTime.as_view()),
 ]
