@@ -73,25 +73,25 @@
                 <h1 class="fl">商品分类</h1>
                 <ul class="sub_menu">
                     {% for category in categories.values() %}
-                    <li>
-                        <div class="level1">
-                            {% for channel in category.channels %}
-                            <a href="{{ channel.url }}">{{ channel.name }}</a>
-                            {% endfor %}
-                        </div>
-                        <div class="level2">
-                            {% for sub_cat in category.cat_subs %}
-                            <div class="list_group">
-                                <div class="group_name fl">{{ sub_cat.name }} &gt;</div>
-                                <div class="group_detail fl">
-                                    {% for sub_cat3 in sub_cat.cat_subs %}
-                                    <a href="/list/{{ sub_cat3.id }}/1/">{{ sub_cat3.name }}</a>
-                                    {% endfor %}
-                                </div>
+                        <li>
+                            <div class="level1">
+                                {% for channel in category.channels %}
+                                    <a href="{{ channel.url }}">{{ channel.name }}</a>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
-                        </div>
-                    </li>
+                            <div class="level2">
+                                {% for sub_cat in category.cat_subs %}
+                                    <div class="list_group">
+                                        <div class="group_name fl">{{ sub_cat.name }} &gt;</div>
+                                        <div class="group_detail fl">
+                                            {% for sub_cat3 in sub_cat.cat_subs %}
+                                                <a href="/list/{{ sub_cat3.id }}/1/">{{ sub_cat3.name }}</a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </li>
                     {% endfor %}
                 </ul>
             </div>
@@ -121,7 +121,7 @@
             <p>【{{ sku.caption }}】</p>
             <div class="price_bar">
                 <span class="show_pirce">¥<em>{{ sku.price }}</em></span>
-                <a href="javascript:;" class="goods_judge">[[comments.length]]人评价</a>
+                <a href="javascript:;" class="goods_judge">{{ sku.comments }}人评价</a>
             </div>
             <div class="goods_num clearfix">
                 <div class="num_name fl">数 量：</div>
@@ -131,6 +131,8 @@
                     <a @click="on_minus" class="minus fr">-</a>
                 </div>
             </div>
+
+
             {% for spec in spec_qs %}
                 <div class="type_select">
                     <label>{{ spec.name }}:</label>
@@ -138,18 +140,22 @@
                         {% if option.sku_id == sku.id %}
                             <a href="#" class="select">{{ option.value }}</a>
                         {% elif option.sku_id %}
-                            <a href="/detail/{{ option.sku_id }}/">{{ option.value }}</a>
+{#                            <a href="/detail/{{ option.sku_id }}/">{{ option.value }}</a>  {# 开发阶段 #}
+                            <a href="/detail/{{ option.sku_id }}.html">{{ option.value }}</a>  {# 生产阶段 #}
                         {% else %}
-                            <a href="#" style="border:#9f9f9f dashed 1px" title="此商品无货">{{ option.value }}</a>
+                            <a href="#" style="border: #9f9f9f dashed 1px" title="此商品无货">{{ option.value }}</a>
+
                         {% endif %}
                     {% endfor %}
-
                 </div>
             {% endfor %}
 
+
+
+
             <div class="total">总价：<em>[[ sku_amount ]]元</em></div>
             <div class="operate_btn">
-                <a href="javascript:;" class="add_cart" id="add_cart" @click='add_cart'>加入购物车</a>
+                <a href="javascript:;" class="add_cart" id="add_cart" @click="add_cart">加入购物车</a>
             </div>
         </div>
     </div>
@@ -170,13 +176,13 @@
             <ul class="detail_tab clearfix">
                 <li @click="on_tab_content('detail')" :class="tab_content.detail?'active':''">商品详情</li>
                 <li @click="on_tab_content('pack')" :class="tab_content.pack?'active':''">规格与包装</li>
-                <li @click="on_tab_content('comment')" :class="tab_content.comment?'active':''">商品评价(1)</li>
+                <li @click="on_tab_content('comment')" :class="tab_content.comment?'active':''">商品评价([[ comments.length ]])</li>
                 <li @click="on_tab_content('service')" :class="tab_content.service?'active':''">售后服务</li>
             </ul>
             <div @click="on_tab_content('detail')" class="tab_content" :class="tab_content.detail?'current':''">
                 <dl>
                     <dt>商品详情：</dt>
-                    <dd>{{ spu.desc_detail | safe}}
+                    <dd>{{ spu.desc_detail | safe }}
                     </dd>
                 </dl>
             </div>
@@ -189,13 +195,16 @@
             </div>
             <div @click="on_tab_content('comment')" class="tab_content" :class="tab_content.comment?'current':''">
                 <ul class="judge_list_con">
-                    <li class="judge_list fl" v-for = "comment in comments">
+                    <li class="judge_list fl" v-for="comment in comments">
                         <div class="user_info fl">
                             <img src="/static/images/cat.jpg">
                             <b>[[ comment.username ]]</b>
+                        </div>
                         <div class="judge_info fl">
-                            <div class="stars_five"></div>
-                            <div class="judge_detail">[[ comment.comment ]]</div>
+                           <div :class="comment.score_class"></div>
+                            <div class="judge_detail">
+                                [[ comment.comment ]]
+                            </div>
                         </div>
                     </li>
                 </ul>
