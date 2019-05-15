@@ -72,8 +72,7 @@ class PaymentStatusView(LoginRequiredView):
             appid=settings.ALIPAY_APPID,
             app_notify_url=None,  # 默认回调url
             app_private_key_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'keys/app_private_key.pem'),
-            alipay_public_key_path=os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                'keys/alipay_public_key.pem'),
+            alipay_public_key_path=os.path.join(os.path.dirname(os.path.abspath(__file__)),'keys/alipay_public_key.pem'),
             # 支付宝的公钥，验证支付宝回传消息使用，不是你自己的公钥,
             sign_type="RSA2",  # RSA 或者 RSA2
             debug=settings.ALIPAY_DEBUG  # 默认False
