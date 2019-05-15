@@ -106,6 +106,14 @@ DATABASES = {
         'PASSWORD': 'meiduo', # 数据库用户密码
         'NAME': 'meiduo' # 数据库名字
     },
+    'slave': { # 读（从机）
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': '192.168.190.151',
+        'PORT': 8306,
+        'USER': 'root',
+        'PASSWORD': 'mysql',
+        'NAME': 'meiduo'
+    }
 }
 
 
@@ -290,3 +298,6 @@ CRONJOBS = [
 ]
 
 CRONTAB_COMMAND_PREFIX = 'LANG_ALL=zh_cn.UTF-8'
+
+# 配置数据库读写路由
+DATABASE_ROUTERS = ['meiduo_mall.utils.db_router.MasterSlaveDBRouter']
