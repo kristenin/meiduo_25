@@ -43,7 +43,9 @@
                         <div class="more_input clearfix">
                             <input type="checkbox" v-model="remembered" name="remembered">
                             <label>记住登录</label>
+                            <a href="{{ url('users:find_password') }}" class="login_btn">忘记密码</a>
                         </div>
+
                         <input type="submit" value="登 录" class="input_submit">
                     </form>
                 </div>

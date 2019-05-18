@@ -1,3 +1,4 @@
+# 开发时配置
 """
 Django settings for meiduo_mall project.
 
@@ -10,36 +11,33 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
-import os,sys
-'''
-['/home/python/Desktop/meiduo_25/meiduo_mall', '/home/python/Desktop/meiduo_25/meiduo_mall', '/home/python/.virtualenvs/django/lib/python36.zip', '/home/python/.virtualenvs/django/lib/python3.6', '/home/python/.virtualenvs/django/lib/python3.6/lib-dynload', '/usr/lib/python3.6', '/home/python/.virtualenvs/django/lib/python3.6/site-packages', '/snap/pycharm-professional/121/helpers/pycharm_matplotlib_backend']
-'''
-# 查看项目导包路径
-# print(sys.path)
+import os, sys
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+# /Users/chao/Desktop/meiduo_25/meiduo_mall/meiduo_mall
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# print(BASE_DIR)
+
 
 # 追加导包路径
 sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
-# 查看新的项目导包路径
 # print(sys.path)
+
+# [''/Users/chao/Desktop/meiduo_25/meiduo_mall/meiduo_mall/apps', /Users/chao/Desktop/meiduo_25/meiduo_mall', '/Users/chao/Desktop/meiduo_25/meiduo_mall', '/Users/chao/.virtualenvs/meiduo_new/lib/python36.zip', '/Users/chao/.virtualenvs/meiduo_new/lib/python3.6', '/Users/chao/.virtualenvs/meiduo_new/lib/python3.6/lib-dynload', '/usr/local/Cellar/python3/3.6.2/Frameworks/Python.framework/Versions/3.6/lib/python3.6', '/Users/chao/.virtualenvs/meiduo_new/lib/python3.6/site-packages', '/Applications/PyCharm.app/Contents/helpers/pycharm_matplotlib_backend']
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'imslnj-%w+-0iv3erkin6wi1guokflr((o08d%z&#avsvfkdei'
+SECRET_KEY = '(9b_jkqg)11h8)*r$+%mbd&3q#n!u_6l98ytf71^3lq7fec9r%'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = ['www.meiduo.site']
 
-
 # Application definition
-
+# 注册/安装子应用: 当应用中使用到模型,需要迁移建表时,必须注册, 子应用中使用到模板时也需要注册
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -48,16 +46,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'haystack', # 全文检索
-    'django_crontab', # 定时任务
+    'haystack',  # 全文检索
+    'django_crontab',  # 定时器
 
     # 'users.apps.UsersConfig',
-    'users',   # 用户模块应用
-    'oauth',   # QQ模块
-    'areas',   # 省市区模块
-    'contents', # 首页
-    'goods',    # 商品
-    'orders',   # 订单
+    'users',  # 用户模块
+    'oauth',  # QQ模块
+    'areas',  # 省市区模块
+    'contents',  # 首页
+    'goods',  # 商品
+    'orders',  # 订单
     'payment',  # 支付
 ]
 
@@ -71,12 +69,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'meiduo_mall.urls'
+ROOT_URLCONF = 'meiduo_mall.urls'  # 项目路由入口
 
+# 模板配置项
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.jinja2.Jinja2',    # jinja2模板引擎
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'BACKEND': 'django.template.backends.jinja2.Jinja2',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # 指定模板文件加载路径 # /Users/chao/Desktop/meiduo_25/meiduo_mall/meiduo_mall/templates
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -88,34 +87,34 @@ TEMPLATES = [
             # 补充Jinja2模板引擎环境
             'environment': 'meiduo_mall.utils.jinja2_env.jinja2_environment',
         },
+
     },
 ]
 
 WSGI_APPLICATION = 'meiduo_mall.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
+# 数据库配置
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql', # 数据库引擎
-        'HOST': '127.0.0.1', # 数据库主机
-        'PORT': 3306, # 数据库端口
-        'USER': 'meiduo', # 数据库用户名
-        'PASSWORD': 'meiduo', # 数据库用户密码
-        'NAME': 'meiduo' # 数据库名字
+    'default': {  # 主机
+        'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
+        'HOST': '192.168.190.151',  # 数据库主机
+        'PORT': 3306,  # 数据库端口
+        'USER': 'meiduo',  # 数据库用户名
+        'PASSWORD': 'meiduo',  # 数据库用户密码
+        'NAME': 'meiduo'  # 数据库名字
     },
-    'slave': { # 读（从机）
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': '192.168.190.151',
-        'PORT': 8306,
-        'USER': 'root',
-        'PASSWORD': 'mysql',
-        'NAME': 'meiduo'
-    }
+    'slave': {  # 从机
+        'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
+        'HOST': '192.168.190.151',  # 数据库主机
+        'PORT': 8306,  # 数据库端口
+        'USER': 'root',  # 数据库用户名
+        'PASSWORD': 'mysql',  # 数据库用户密码
+        'NAME': 'meiduo'  # 数据库名字
+    },
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -135,29 +134,32 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
-LANGUAGE_CODE = 'zh-hans'
+# LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'zh-hans'  # 富文本编辑器
 
+# TIME_ZONE = 'UTC'
 TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = False
-
+USE_TZ = False  # 不要让它再变成UTC时区直接用 指定时区
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
+# 静态文件访问路由
 STATIC_URL = '/static/'
-
 # 配置静态文件加载路径
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
+# 缓存到redis
 CACHES = {
     "default": { # 默认
         "BACKEND": "django_redis.cache.RedisCache",
@@ -173,21 +175,21 @@ CACHES = {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     },
-    "verify_code": { # 存储验证码
+    "verify_code": {  # 存储验证码
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/2",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     },
-    "history": { # 用户浏览记录
+    "history": {  # 存储商品浏览记录
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/3",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     },
-    "carts": {  # 购物车
+    "carts": {  # 存储购物车数据
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/4",
         "OPTIONS": {
@@ -195,10 +197,10 @@ CACHES = {
         }
     },
 }
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"  # 配置session使用缓存
+SESSION_CACHE_ALIAS = "session"  # 缓存到redis
 
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-SESSION_CACHE_ALIAS = "session"
-
+# 日志输出器
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,  # 是否禁用已经存在的日志器
@@ -241,35 +243,35 @@ LOGGING = {
 }
 
 
-# 指定django认证用户模型类：应用名.模型名
+# 指定Django认证用户模型类: 应用名.模型名
 AUTH_USER_MODEL = 'users.User'
 
-# 指定自定义的用户认证后端
+# 指定Django登录认证后端
 AUTHENTICATION_BACKENDS = ['users.utils.UsernameMobileAuthBackend']
 
-# 指定登陆界面的路由
-LOGIN_URL  = '/login/'
+# 指定登录界面的路由
+LOGIN_URL = '/login/'
+
 
 # QQ登录配置项
 QQ_CLIENT_ID = '101518219'
 QQ_CLIENT_SECRET = '418d84ebdc7241efb79536886ae95224'
 QQ_REDIRECT_URI = 'http://www.meiduo.site:8000/oauth_callback'
 
-# 发邮件配置项
+# 发邮箱配置项
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' # 指定邮件后端
 EMAIL_HOST = 'smtp.163.com' # 发邮件主机
 EMAIL_PORT = 25 # 发邮件端口
-EMAIL_HOST_USER = '18229874110@163.com' # 授权的邮箱
-EMAIL_HOST_PASSWORD = 'python123' # 邮箱授权时获得的密码，非注册登录密码
-EMAIL_FROM = '美多商城<18229874110@163.com>' # 发件人抬头
-
+EMAIL_HOST_USER = 'itcast99@163.com' # 授权的邮箱
+EMAIL_HOST_PASSWORD = 'python99' # 邮箱授权时获得的密码，非注册登录密码
+EMAIL_FROM = '美多商城<itcast99@163.com>' # 发件人抬头
 
 # 邮箱验证链接域名部分
 EMAIL_VERIFY_URL = 'http://www.meiduo.site:8000/emails/verification/'
 
-# 指定自定义的Django文件存储类
+# 修改Django的文件存储类
 DEFAULT_FILE_STORAGE = 'meiduo_mall.utils.fastdfs.fdfs_storage.FastDFSStorage'
-
+FDFS_BASE_URL = 'http://192.168.190.151:8888/'  # FastDFS中sotrage(nginx) ip和端口
 
 # Haystack
 HAYSTACK_CONNECTIONS = {
@@ -283,13 +285,15 @@ HAYSTACK_CONNECTIONS = {
 # 当添加、修改、删除数据时，自动生成索引
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
-HAYSTACK_SEARCH_RESULTS_PER_PAGE = 5    # 每页显示五条数据
+HAYSTACK_SEARCH_RESULTS_PER_PAGE = 5  # 搜索出来的数据每页显示多少条
+
 
 # 支付宝
 ALIPAY_APPID = '2016091900551154'
 ALIPAY_DEBUG = True  # 表示是沙箱环境还是真实支付环境
 ALIPAY_URL = 'https://openapi.alipaydev.com/gateway.do'
 ALIPAY_RETURN_URL = 'http://www.meiduo.site:8000/payment/status/'
+
 
 # 定时任务
 CRONJOBS = [
@@ -299,5 +303,8 @@ CRONJOBS = [
 
 CRONTAB_COMMAND_PREFIX = 'LANG_ALL=zh_cn.UTF-8'
 
-# 配置数据库读写路由
+# 指定数据库的路由
 DATABASE_ROUTERS = ['meiduo_mall.utils.db_router.MasterSlaveDBRouter']
+
+# 指定收集静态文件存放目录
+STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'static')

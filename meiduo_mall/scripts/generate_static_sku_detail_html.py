@@ -1,4 +1,4 @@
-#!/usr/bin/env python  # 指定python环境
+#!/usr/bin/env python
 
 import os, sys
 import django

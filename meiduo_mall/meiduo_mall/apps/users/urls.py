@@ -45,4 +45,14 @@ urlpatterns = [
 
     # 用户中心我的订单
     url(r'^orders/info/(?P<page_num>\d+)/$', views.UserOrderInfoView.as_view()),
+
+    url(r'^find_password/$', views.FindPassword.as_view(), name='find_password'),
+
+    url(r'^accounts/(?P<username>\d+)/sms/token/$', views.FindPasswordView.as_view(), name='find_password2'),
+
+    url(r'^sms_codes/$', views.VriefyView.as_view(), name='find_password3'),
+
+    url(r'^accounts/(?P<username>[a-zA-Z0-9_-]{5,20})/password/token/$', views.VriefyView2.as_view(), name='find_password4'),
+
+    url(r'^users/(?P<user_id>\d+)/password/$', views.ResetPassword.as_view(), name='find_password5'),
 ]

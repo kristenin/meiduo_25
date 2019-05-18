@@ -9,7 +9,8 @@ var vm = new Vue({
         error_pwd: false,
         username: '',
         password: '',
-        remembered: false
+        remembered: false,
+        find_password:''
     },
     methods: {
         // 检查账号

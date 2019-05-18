@@ -18,7 +18,10 @@ from .utils import generate_verify_email_url, check_token_to_user
 from meiduo_mall.utils.views import LoginRequiredView
 from goods.models import SKU
 from carts.utils import merge_cart_cookie_to_redis
-from orders.models import OrderInfo,OrderGoods
+from orders.models import OrderInfo
+from .utils import get_user_by_account
+from celery_tasks.sms.tasks import send_sms_code
+import random
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -90,7 +93,6 @@ class RegisterView(View):
         # 响应结果重定向到首页
         return response
 
-
 class UsernameCountView(View):
     """判断用户名是否已注册"""
 
@@ -101,7 +103,6 @@ class UsernameCountView(View):
 
         return http.JsonResponse({'count': count, 'code': RETCODE.OK, 'errmsg': 'OK'})
 
-
 class MobileCountView(View):
     """判断手机号是否已注册"""
 
@@ -111,7 +112,6 @@ class MobileCountView(View):
         count = User.objects.filter(mobile=mobile).count()
 
         return http.JsonResponse({'count': count, 'code': RETCODE.OK, 'errmsg': 'OK'})
-
 
 class LoginView(View):
     """用户账号登录"""
@@ -164,7 +164,6 @@ class LoginView(View):
         # 响应结果重定向到首页
         return response
 
-
 class LogoutView(View):
     """退出登录"""
 
@@ -177,7 +176,6 @@ class LogoutView(View):
         response.delete_cookie('username')
         # 重定向到login界面
         return response
-
 
 class UserInfoView(mixins.LoginRequiredMixin, View):
     """用户个人信息"""
@@ -194,7 +192,6 @@ class UserInfoView(mixins.LoginRequiredMixin, View):
         # return redirect_to_login(self.request.get_full_path(), self.get_login_url(), self.get_redirect_field_name())
 
         return render(request, 'user_center_info.html')
-
 
 class EmailView(mixins.LoginRequiredMixin, View):
     """添加用户邮箱"""
@@ -354,7 +351,6 @@ class CreateAddressView(LoginRequiredView):
         }
         return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK', 'address': address_dict})
 
-
 class UpdateDestroyAddressView(LoginRequiredView):
     """修改和删除"""
 
@@ -454,7 +450,6 @@ class DefaultAddressView(LoginRequiredView):
 
         return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK'})
 
-
 class UpdateTitleAddressView(LoginRequiredView):
     """修改用户收货地址标题"""
     def put(self, request, address_id):
@@ -470,13 +465,11 @@ class UpdateTitleAddressView(LoginRequiredView):
 
         return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK'})
 
-
 class ChangePasswordView(LoginRequiredView):
     """修改密码"""
 
     def get(self, request):
         return render(request, 'user_center_pass.html')
-
 
 class UserBrowseHistory(View):
     """用户浏览记录"""
@@ -568,3 +561,100 @@ class UserOrderInfoView(LoginRequiredView):
             'total_page': total_page    # 总页数
         }
         return render(request, 'user_center_order.html', context)
+
+
+class FindPassword(View):
+    # 返回找回密码界面
+    def get(self,request):
+        return render(request,'find_password.html')
+
+class FindPasswordView(View):
+    # 验证用户名和图形验证码
+    def get(self, request,username):
+        image_code_client = request.GET.get('text')
+        image_code_id = request.GET.get('image_code_id')
+
+        if not all([image_code_client,image_code_id]):
+            return http.HttpResponseForbidden('缺少mobile参数')
+
+        if not re.match(r'^1[3-9]\d{9}$', username):
+            return http.HttpResponseForbidden('请输入正确的用户名')
+
+        user= get_user_by_account(username)
+
+        redis_conn = get_redis_connection('verify_code')
+        image_code_server = redis_conn.get('img_%s' % image_code_id)
+        if image_code_server is None:
+            return http.JsonResponse({'code':RETCODE.IMAGECODEERR, 'errmsg':'图形验证码实效'})
+
+        image_code_server = image_code_server.decode()
+        if image_code_client.lower() != image_code_server.lower():
+            return http.JsonResponse({'code':RETCODE.IMAGECODEERR, 'errmsg':'输入的图形验证码有误'})
+
+        return http.JsonResponse({'code': RETCODE.OK, 'errmsg': '验证成功','mobile':user.mobile,'access_token':image_code_server })
+
+class VriefyView(View):
+    # 创建短信验证码
+    def get(self,request):
+        access_token = request.GET.get('access_token')
+        sms_code = '%06d' % random.randint(0,999999)
+        logger.info(sms_code)
+
+        redis_conn = get_redis_connection('verify_code')
+        redis_conn.setex('sms_%s' % sms_code, 300 ,sms_code)
+
+        send_sms_code.delay(access_token, sms_code)
+
+        return http.JsonResponse({"code": RETCODE.OK, 'errmsg': '发送短信验证'})
+
+class VriefyView2(View):
+    # 验证用户名和短信验证码
+    def get(self, request, username):
+
+        sms_code = request.GET.get('sms_code')
+
+        redis_coon = get_redis_connection('verify_code')
+
+        sms_code_server = redis_coon.get('sms_%s' % sms_code)  # 获取redis中的短信验证码
+
+        if not re.match(r'^1[3-9]\d{9}$', username):
+            return http.HttpResponseForbidden('请输入正确的用户名')
+
+        user = get_user_by_account(username).id
+
+        if sms_code_server is None or sms_code != sms_code_server.decode():
+            return http.HttpResponseForbidden('短信验证码有误')
+
+        sms_code_server = sms_code_server.decode()
+        if sms_code.lower() != sms_code_server.lower():
+            return http.JsonResponse({'code': RETCODE.IMAGECODEERR, 'errmsg': '输入的图形验证码有误'})
+
+        return http.JsonResponse({'code': RETCODE.OK, 'errmsg': '验证成功', 'user_id':user, 'access_token':sms_code_server})
+
+class ResetPassword(View):
+    # 重置密码
+    def post(self, request, user_id):
+        dict_qs = json.loads(request.body.decode())
+        password = dict_qs.get('password')
+        password2 = dict_qs.get('password2')
+        access_token = dict_qs.get('access_token')
+
+        if all([password, password2, access_token]) is False:
+            return http.HttpResponseForbidden('缺少必传参数')
+
+        if not re.match(r'^[0-9A-Za-z]{8,20}$', password):
+            return http.HttpResponseForbidden('请输入8-20位的密码')
+
+        if password != password2:
+            return http.HttpResponseForbidden('输入的密码两次不一致')
+
+        # 修改密码
+        try:
+            request.user.set_password(password2)
+            request.user.save()
+        except Exception as e:
+            logger.error(e)
+            return http.JsonResponse({"code":RETCODE.PWDERR, 'errmsg':'密码错误'})
+
+
+        return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'重置成功',  'access_token':access_token})
