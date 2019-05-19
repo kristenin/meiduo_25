@@ -7,13 +7,14 @@ from django.contrib.auth import login
 
 from meiduo_mall.utils.response_code import RETCODE
 import logging
-from .models import OAuthQQUser
+from .models import OAuthQQUser,OAuthSinaUser
 import re
 
 from django_redis import get_redis_connection
 from .utils import generate_openid_signature,check_openid_sign
 from users.models import User
 from carts.utils import merge_cart_cookie_to_redis
+from .sinaweibopy3 import APIClient
 
 
 logger = logging.getLogger('django')
@@ -151,5 +152,110 @@ class OAuthUserView(View):
 
         # 登录时用户名写入到cookie，有效期15天
         response.set_cookie('username', user.username, max_age=3600*24*15)
+
+        return response
+
+class OAuthWeiboURLView(View):
+    """提供weibo登录界面"""
+    def get(self, request):
+        next = request.GET.get('next', '/')
+
+        oauth = APIClient(app_key=settings.APP_KEY,
+                          app_secret=settings.APP_SECRET,
+                          redirect_uri=settings.REDIRECT_URI)
+
+        # https://api.weibo.com/oauth2/authorize?response_type=code&client_id=123&redirect_uri=xxx
+        login_url = oauth.get_authorize_url()
+        return http.JsonResponse({'login_url': login_url, 'code': RETCODE.OK, 'errmsg': 'OK'})
+
+
+class OAuthWeiboUserView(View):
+    """weibo登录的回调处理"""
+    def get(self, request):
+        # 获取查询字符串中的code
+        code = request.GET.get('code')
+        state = request.GET.get('state', '/')
+
+        oauth = APIClient(app_key=settings.APP_KEY,
+                          app_secret=settings.APP_SECRET,
+                          redirect_uri=settings.REDIRECT_URI)
+
+        result = oauth.request_access_token(code)
+        access_token = result.access_token
+
+        uid = result.uid
+
+        try:
+            oauth_model = OAuthSinaUser.objects.get(uid=uid)
+        except OAuthSinaUser.DoesNotExist:
+            uid = generate_openid_signature(uid)
+            return render(request, 'sina_callback.html', {'openid':uid})
+        else:
+            user = oauth_model.user
+            login(request, user)
+
+            response = redirect(state)
+            response.set_cookie('username', user.username,  max_age=3600 * 24 * 15)
+            return response
+
+    def post(self, request):
+        """美多商城用户绑定到openid"""
+
+        mobile = request.POST.get('mobile')
+        password = request.POST.get('password')
+        sms_code = request.POST.get('sms_code')
+        uid = request.POST.get('openid')
+
+
+        if all([mobile, password, sms_code, uid]) is False:
+            return http.HttpResponseForbidden('缺少必传参数')
+
+        if not re.match(r'^1[3-9]\d{9}$', mobile):
+            return http.HttpResponseForbidden('请输入正确的手机号码')
+
+        if not re.match(r'^[0-9A-Za-z]{8,20}$', password):
+            return http.HttpResponseForbidden('请输入8-20位的密码')
+
+        # 判断短信验证码是否一致
+        redis_conn = get_redis_connection('verify_code')
+        sms_code_server = redis_conn.get('sms_%s' % mobile)
+        if sms_code_server is None:
+            return render(request, 'sina_callback.html', {'sms_code_errmsg': '无效的短信验证码'})
+        if sms_code != sms_code_server.decode():
+            return render(request, 'sina_callback.html', {'sms_code_errmsg': '输入短信验证码有误'})
+
+        uid = check_openid_sign(uid)
+        if not uid:
+            return render(request, 'sina_callback.html', {'uid_errmsg': '无效的uid'})
+
+        # 保存注册数据
+        try:
+            user = User.objects.get(mobile=mobile)
+        except User.DoesNotExist:
+            user = User.objects.create_user(
+                username=mobile,
+                password=password,
+                mobile=mobile,
+            )
+        else:
+
+            if user.check_password(password) is False:
+                return render(request, 'sina_callback.html', {'account_errmsg': '用户名或密码错误'})
+
+        # 将用户绑定openid
+        OAuthSinaUser.objects.create(
+            uid=uid,
+            user= user
+        )
+
+        # 实现状态保持
+        login(request, user)
+
+        # 响应绑定结果
+        next = request.GET.get('state')
+        response = redirect(next)
+
+        # 登录时用户名写入到cookie，有效期15天
+        response.set_cookie('username', user.username, max_age=3600 * 24 * 15)
 
         return response

@@ -656,5 +656,4 @@ class ResetPassword(View):
             logger.error(e)
             return http.JsonResponse({"code":RETCODE.PWDERR, 'errmsg':'密码错误'})
 
-
         return http.JsonResponse({'code':RETCODE.OK, 'errmsg':'重置成功',  'access_token':access_token})

@@ -258,6 +258,13 @@ QQ_CLIENT_ID = '101518219'
 QQ_CLIENT_SECRET = '418d84ebdc7241efb79536886ae95224'
 QQ_REDIRECT_URI = 'http://www.meiduo.site:8000/oauth_callback'
 
+
+# WEIBO登录配置项
+APP_KEY = '3305669385'
+APP_SECRET = '74c7bea69d5fc64f5c3b80c802325276'
+REDIRECT_URI= 'http://www.meiduo.site:8000/sina_callback'
+
+
 # 发邮箱配置项
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' # 指定邮件后端
 EMAIL_HOST = 'smtp.163.com' # 发邮件主机
